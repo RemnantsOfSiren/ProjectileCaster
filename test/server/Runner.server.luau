@@ -4,21 +4,23 @@ local ProjectileCaster = require(ReplicatedStorage.Packages.ProjectileCaster)
 
 local Caster = ProjectileCaster.new({
     Size = 2,
-    Speed = 10,
+    Speed = 60,
     Visual = ReplicatedStorage.Projectile,
     MaxDistance = 1000,
 })
 
-Caster.Hit:Connect(function(Hit, Position, Normal)
-    print(`Hit {Hit} at {Position} with {Normal}`)
-end)
-
 task.wait(5)
 
 local Start = Vector3.new(0, 0, 0)
-local End = Vector3.new(0, 0, 1000)
+local End = Vector3.new(0, 50, 1000)
 
 while true do
-    Caster:Cast(Start, (End - Start).Unit)
+    local Projectile = Caster:Cast(Start, (End - Start).Unit)
+    
+    Projectile.Hit:Connect(function(Hit, Position, Normal)
+        local Direction = Projectile:GetDirection()
+        Projectile:UpdateDirection(Direction - (2 * Direction:Dot(Normal) * Normal))
+    end)
+
     task.wait(.5)
 end

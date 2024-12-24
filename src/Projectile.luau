@@ -9,6 +9,7 @@ local Signal = require(script.Parent.Parent.Signal)
 local Projectile = {}
 Projectile.__index = Projectile
 
+
 type Projectile = typeof(setmetatable({} :: {
     Hit: typeof(Signal.new()),
     _Data: { [string]: any },
@@ -61,6 +62,13 @@ local function RegisterHit(Data: { Id: string, Time: number, Position: Vector3, 
     end
 end
 
+local ServerInstance = Instance.new("Part")
+ServerInstance.Anchored = true
+ServerInstance.CanCollide = false
+ServerInstance.CanQuery = false
+ServerInstance.CanTouch = false
+ServerInstance.Transparency = .5
+
 function Projectile.new(Data: { [string]: any }): Projectile
     Data.Id = HttpService:GenerateGUID(false)
 
@@ -72,23 +80,35 @@ function Projectile.new(Data: { [string]: any }): Projectile
         _Cleaner = Trove.new(),
     }, Projectile)
 
-    local Origin = Data.Start
+	Data.Position = Data.Start
+	Data.Start = nil
+
+    local ServerInstance = self._Cleaner:Add(ServerInstance:Clone(), "Destroy")
+    ServerInstance.Name = Data.Id
+    ServerInstance.Size = Vector3.new(Data.Size, Data.Size, Data.Size)
+    ServerInstance.Position = Data.Position
+    ServerInstance.Parent = workspace.CurrentCamera.ServerProjectiles
+
+    local DistanceTraveled = 0
 
     self._Cleaner:Add(task.spawn(function() 
         while true do
             Net.update.sendToAll({
                 Id = Data.Id,
-                Position = Data.Start,
+                Position = Data.Position,
                 Direction = Data.Direction,
             })
 
             local DeltaTime = task.wait()
-            Data.Start += Data.Direction * Data.Speed * DeltaTime
-            
-            local Result = workspace:Spherecast(Data.Start, Data.Size, Data.Direction * DeltaTime, self._Data.__RaycastParams)
+            local Step = Data.Direction * Data.Speed * DeltaTime
+            Data.Position += Step
+            DistanceTraveled += Step.Magnitude
+            ServerInstance.Position = Data.Position
+    
+            local Result = workspace:Shapecast(ServerInstance, Vector3.one * Data.Size, Data.__RaycastParams)
 
             if Result then
-                RegisterHit({
+                task.spawn(RegisterHit, {
                     Id = Data.Id,
                     Time = workspace:GetServerTimeNow(),
                     Normal = Result.Normal,
@@ -97,7 +117,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
                 }, "Server")
             end
 
-            if Data.MaxDistance and (Data.Position - Origin).Magnitude >= self._Data.MaxDistance then
+            if Data.MaxDistance and DistanceTraveled >= Data.MaxDistance then
                 self:Destroy()
                 break
             end
@@ -109,7 +129,16 @@ function Projectile.new(Data: { [string]: any }): Projectile
     return self
 end
 
+function Projectile:GetDirection()
+    return self._Data.Direction
+end
+
+function Projectile:UpdateDirection(Direction: Vector3)
+    self._Data.Direction = Direction
+end
+
 function Projectile:Destroy()
+    Projectiles[self._Data.Id] = nil
     Net.destroy.sendToAll(self._Data.Id)
     self.Hit:Destroy()
     if self._Cleaner then
@@ -118,7 +147,13 @@ function Projectile:Destroy()
     table.clear(self :: any)
 end
 
-Net.hit.listen(RegisterHit)
+Net.hit.listen(function(Data)
+    local Success, Error = pcall(RegisterHit, Data)
+
+    if not Success then
+        warn(Error)
+    end
+end)
 
 local function OnPlayerAdded(Player: Player)
     for _, _Projectile in Projectiles do

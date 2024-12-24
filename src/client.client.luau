@@ -1,4 +1,5 @@
 local RunService = game:GetService("RunService")
+local CollectionService = game:GetService("CollectionService")
 
 local Net = require(script.Parent.Net)
 local Trove = require(script.Parent.Parent.Trove)
@@ -31,22 +32,22 @@ function Projectile:Destroy()
     end
 
     Projectiles[self.Id] = nil
+    table.clear(self)
 end
 
 function Projectile:Update(DeltaTime: number)
-    local Step = self.Direction * self.Speed * DeltaTime
-    self.Position += Step
-    self.DistanceTraveled += Step.Magnitude
     self.Visual.CFrame = CFrame.new(self.Position, self.Position + self.Direction)
 
-    local Result = workspace:Spherecast(self.Position, self.Size, (self.Position + self.Direction).Unit * DeltaTime, self._OverlapParams)
+    local Result = workspace:Shapecast(self.Visual, Vector3.one * self.Size, self.__RaycastParams)
 
     if Result then
+        local Hit = Result.Instance
+
         Net.hit.send({
             Id = self.Id,
             Time = workspace:GetServerTimeNow(),
             Normal = Result.Normal,
-            Object = Result.Instance,
+            Object = if Hit and Hit:IsDescendantOf(VisualFolder) then tostring(Hit) else Hit,
             Position = Result.Position,
         })
     end
@@ -54,6 +55,10 @@ function Projectile:Update(DeltaTime: number)
     if self.MaxDistance and self.DistanceTraveled >= self.MaxDistance then
         self:Destroy()
     end
+
+    local Step = self.Direction * self.Speed * DeltaTime
+    self.Position += Step
+    self.DistanceTraveled += Step.Magnitude
 end
 
 function Projectile.new(Data: ProjectileData)
@@ -67,23 +72,33 @@ function Projectile.new(Data: ProjectileData)
         DistanceTraveled = 0,
     }, Projectile)
 
-    local _RaycastParams = RaycastParams.new()
-    _RaycastParams.FilterDescendantsInstances = Data.Ignore or {}
-    _RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
-
+    
     if Data.Config then
         self.Config = require(Data.Config)
     end
-
+    
     self.Cleaner = Trove.new()
-
+    
     if Data.Visual then
         self.Visual = self.Cleaner:Add(Data.Visual:Clone(), "Destroy")
         self.Visual.CFrame = CFrame.new(self.Position, self.Position + self.Direction)
         self.Visual.Parent = VisualFolder
     end
 
-    self.Cleaner:Connect(RunService.Heartbeat, function(DeltaTime)
+    local IgnoreList = CollectionService:GetTagged("ProjectileCasterIgnore")
+
+    for _, Instance in pairs(Data.Ignore or {}) do
+        table.insert(IgnoreList, Instance)
+    end
+    
+    IgnoreList[#IgnoreList + 1] = VisualFolder
+
+    local _RaycastParams = RaycastParams.new()
+    _RaycastParams.FilterDescendantsInstances = IgnoreList
+    _RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    self.__RaycastParams = _RaycastParams
+    
+    self.Cleaner:Connect(RunService.RenderStepped, function(DeltaTime)
         self:Update(DeltaTime)
     end)
 

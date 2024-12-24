@@ -1,5 +1,6 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
 
 local Projectile = require(script.Projectile)
 
@@ -15,6 +16,11 @@ type ProjectileCasterSettings = {
     Ignore: { Instance }?,
 }
 
+local ServerProjectiles = Instance.new("Folder")
+ServerProjectiles.Name = "ServerProjectiles"
+ServerProjectiles:AddTag("ProjectileCasterIgnore")
+ServerProjectiles.Parent = workspace.CurrentCamera
+
 type ProjectileCaster = typeof(setmetatable({} :: ProjectileCasterSettings, ProjectileCaster))
 
 function ProjectileCaster.new(Settings: ProjectileCasterSettings): ProjectileCaster
@@ -22,8 +28,14 @@ function ProjectileCaster.new(Settings: ProjectileCasterSettings): ProjectileCas
         assert(Settings.Visual:IsDescendantOf(ReplicatedStorage), "@[ProjectileCaster] - Visual must be a descendant of ReplicatedStorage.")
     end
 
+    local IgnoreList = CollectionService:GetTagged("ProjectileCasterIgnore")
+
+    for _, Instance in pairs(Settings.Ignore or {}) do
+        table.insert(IgnoreList, Instance)
+    end
+    
     local RaycastParams = RaycastParams.new()
-    RaycastParams.FilterDescendantsInstances = Settings.Ignore or {}
+    RaycastParams.FilterDescendantsInstances = IgnoreList
     RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
 
     return setmetatable({
