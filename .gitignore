@@ -1,0 +1,11 @@
+# Project place file
+/ProjectileCast.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+Packages
+wally.lock
+.vscode
+selene.toml

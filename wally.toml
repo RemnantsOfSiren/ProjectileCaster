@@ -1,0 +1,16 @@
+[package]
+name = "remnantsofsiren/projectilecaster"
+version = "0.0.1"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+description = """
+    I wouldn't advice using this for production use, at the moment. Extremely experimental and only being uploaded for my own personal projects.
+    Server/Client based projectile hit detection.
+    requires:
+        - emitLegacyScripts: false
+"""
+
+[dependencies]
+Trove = "sleitnick/trove@1.5.0"
+Signal = "data-oriented-house/lemonsignal@1.10.0"
+ByteNet = "ffrostflame/bytenet@0.4.6"
