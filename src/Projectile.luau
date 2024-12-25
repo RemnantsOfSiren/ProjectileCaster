@@ -9,7 +9,6 @@ local Signal = require(script.Parent.Parent.Signal)
 local Projectile = {}
 Projectile.__index = Projectile
 
-
 type Projectile = typeof(setmetatable({} :: {
     Hit: typeof(Signal.new()),
     _Data: { [string]: any },
@@ -25,7 +24,7 @@ task.spawn(function()
             if HitRegistry[Id] then
                 for _, HitData in HitRegistry[Id] do
                     for Object, HitInfo in HitData do
-                        if #HitInfo.__Players > (#PlayerService:GetPlayers() / 2) then
+                        if (not table.find(HitInfo.__Players, "Server") and #HitInfo.__Players > 1) or (#HitInfo.__Players > (#PlayerService:GetPlayers() * .1)) then
                             table.sort(HitInfo.__Hits, function(A, B)
                                 return A.Name == "Server" or A.Time < B.Time 
                             end)
@@ -71,8 +70,11 @@ ServerInstance.Transparency = .5
 
 function Projectile.new(Data: { [string]: any }): Projectile
     Data.Id = HttpService:GenerateGUID(false)
+    Data.Time = workspace:GetServerTimeNow()
 
-    Net.create.sendToAll(Data)
+    Net.create.sendToAll(table.clone(Data))
+
+    Data.Time = nil
 
     local self = setmetatable({
         Hit = Signal.new(),
@@ -83,11 +85,14 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	Data.Position = Data.Start
 	Data.Start = nil
 
-    local ServerInstance = self._Cleaner:Add(ServerInstance:Clone(), "Destroy")
-    ServerInstance.Name = Data.Id
-    ServerInstance.Size = Vector3.new(Data.Size, Data.Size, Data.Size)
-    ServerInstance.Position = Data.Position
-    ServerInstance.Parent = workspace.CurrentCamera.ServerProjectiles
+    if Data.Debug then
+        local ServerInstance = self._Cleaner:Add(ServerInstance:Clone(), "Destroy")
+        ServerInstance.Name = Data.Id
+        ServerInstance.Size = Vector3.new(Data.Size, Data.Size, Data.Size)
+        ServerInstance.Position = Data.Position
+        ServerInstance.Parent = workspace.CurrentCamera.ServerProjectiles
+        self._ServerInstance = ServerInstance
+    end
 
     local DistanceTraveled = 0
 
@@ -99,13 +104,14 @@ function Projectile.new(Data: { [string]: any }): Projectile
                 Direction = Data.Direction,
             })
 
-            local DeltaTime = task.wait()
-            local Step = Data.Direction * Data.Speed * DeltaTime
-            Data.Position += Step
-            DistanceTraveled += Step.Magnitude
-            ServerInstance.Position = Data.Position
-    
-            local Result = workspace:Shapecast(ServerInstance, Vector3.one * Data.Size, Data.__RaycastParams)
+            local Result
+
+            if self._ServerInstance then
+                self._ServerInstance.Position = Data.Position
+                Result = workspace:Shapecast(ServerInstance, Vector3.one * Data.Size, Data.__RaycastParams)
+            else
+                Result = workspace:Blockcast(CFrame.lookAt(Data.Position, Data.Position + Data.Direction), Vector3.one * Data.Size, Data.__RaycastParams)
+            end
 
             if Result then
                 task.spawn(RegisterHit, {
@@ -121,6 +127,11 @@ function Projectile.new(Data: { [string]: any }): Projectile
                 self:Destroy()
                 break
             end
+
+            local DeltaTime = task.wait()
+            local Step = Data.Direction * Data.Speed * DeltaTime
+            Data.Position += Step
+            DistanceTraveled += Step.Magnitude
         end
     end), true)
 

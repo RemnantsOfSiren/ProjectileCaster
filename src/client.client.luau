@@ -12,6 +12,7 @@ Projectile.__index = Projectile
 type ProjectileData = {
     Id: string,
     Size: number,
+    Time: number,
     Speed: number,
     Start: Vector3,
     Direction: Vector3,
@@ -72,7 +73,6 @@ function Projectile.new(Data: ProjectileData)
         DistanceTraveled = 0,
     }, Projectile)
 
-    
     if Data.Config then
         self.Config = require(Data.Config)
     end
@@ -81,7 +81,7 @@ function Projectile.new(Data: ProjectileData)
     
     if Data.Visual then
         self.Visual = self.Cleaner:Add(Data.Visual:Clone(), "Destroy")
-        self.Visual.CFrame = CFrame.new(self.Position, self.Position + self.Direction)
+        self.Visual.CFrame = CFrame.new(self.Position, self.Position + self.Direction) * CFrame.new(0, 0, workspace:GetServerTimeNow() - Data.Time) -- account for any latency
         self.Visual.Parent = VisualFolder
     end
 

@@ -6,6 +6,7 @@ return ByteNet.defineNamespace("ProjectileCastNet", function()
             value = ByteNet.struct({
                 Id = ByteNet.string,
                 Size = ByteNet.int8,
+                Time = ByteNet.int32,
                 Speed = ByteNet.int8,
                 Start = ByteNet.vec3,
                 Direction = ByteNet.vec3,
@@ -28,7 +29,7 @@ return ByteNet.defineNamespace("ProjectileCastNet", function()
         hit = ByteNet.definePacket({
             value = ByteNet.struct({
                 Id = ByteNet.string,
-                Time = ByteNet.uint16,
+                Time = ByteNet.int32,
                 Normal = ByteNet.vec3,
                 Object = ByteNet.inst,
                 Position = ByteNet.vec3,

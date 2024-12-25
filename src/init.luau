@@ -14,6 +14,7 @@ type ProjectileCasterSettings = {
     Visual: Instance?,
     Config: ModuleScript?,
     Ignore: { Instance }?,
+    Debug: boolean?,
 }
 
 local ServerProjectiles = Instance.new("Folder")
@@ -41,6 +42,7 @@ function ProjectileCaster.new(Settings: ProjectileCasterSettings): ProjectileCas
     return setmetatable({
         Size = Settings.Size or 1,
         Speed = Settings.Speed or 10,
+        Debug = Settings.Debug,
         Visual = Settings.Visual,
         Config = Settings.Config,
         MaxDistance = Settings.MaxDistance,
@@ -61,7 +63,8 @@ function ProjectileCaster:Cast(Start: Vector3, Direction: Vector3, VisualOverrid
         Direction = Direction,
         MaxDistance = self.MaxDistance,
         Visual = VisualOverride or self.Visual,
-        Config = self.Config,   
+        Config = self.Config,
+        Debug = self.Debug,
     })
 end
 
