@@ -77,6 +77,13 @@ ServerInstance.CanQuery = false
 ServerInstance.CanTouch = false
 ServerInstance.Transparency = 0.5
 
+--[=[
+	@function new
+	@within Projectile
+	@parameters Data: { [string]: any }
+	@return Projectile
+	@description Creates a new Projectile instance.
+]=]
 function Projectile.new(Data: { [string]: any }): Projectile
 	Data.Id = HttpService:GenerateGUID(false)
 	Data.Time = workspace:GetServerTimeNow()
@@ -156,14 +163,33 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	return self
 end
 
+--[=[
+	@method GetDirection
+	@within Projectile
+	@return Vector3
+	Returns the direction of the projectile.	
+]=]
 function Projectile:GetDirection()
 	return self._Data.Direction
 end
 
+--[=[
+	@method UpdateDirection
+	@within Projectile
+	@parameter Direction Vector3
+]=]
 function Projectile:UpdateDirection(Direction: Vector3)
 	self._Data.Direction = Direction
 end
 
+--[=[
+	@method Destroy
+	@within Projectile
+	@description Destroys the projectile.
+
+	this method will destroy the projectile and all of its connections.
+	It's auto called if there is a max distance specified and the projectile reaches it.
+]=]
 function Projectile:Destroy()
 	Projectiles[self._Data.Id] = nil
 	Net.destroy.sendToAll(self._Data.Id)

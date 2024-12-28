@@ -1,11 +1,14 @@
 [package]
 name = "remnantsofsiren/projectilecaster"
-version = "0.0.4"
+version = "0.0.5"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 description = """
     I wouldn't advice using this for production use, at the moment. Extremely experimental and only being uploaded for my own personal projects.
     Server/Client based projectile hit detection.
+
+    API: https://remnantsofsiren.github.io/ProjectileCaster
+
     requires:
         - emitLegacyScripts: false
 """

@@ -24,6 +24,20 @@ ServerProjectiles.Parent = workspace.CurrentCamera
 
 type ProjectileCaster = typeof(setmetatable({} :: ProjectileCasterSettings, ProjectileCaster))
 
+--[=[
+	@class ProjectileCaster
+
+	ProjectileCaster is a class that allows you to cast projectiles in the game world, and handle the logic of the projectile's movement and collision.
+	Projectile detection is both client and server sided, and can be configured to ignore specific instances.
+	It utilizes a loose sanity check to ensure that the projectile is not being abused by the client.
+]=]
+
+--[=[
+	@function new
+	@parameters Settings: { Size: number?, Speed: number?, MaxDistance: number?, Visual: Instance?, Config: ModuleScript?, Ignore: { Instance }?, Debug: boolean? }
+	@return ProjectileCaster
+	Creates a new ProjectileCaster instance.
+]=]
 function ProjectileCaster.new(Settings: ProjectileCasterSettings): ProjectileCaster
 	if Settings.Visual then
 		assert(
@@ -53,6 +67,17 @@ function ProjectileCaster.new(Settings: ProjectileCasterSettings): ProjectileCas
 	}, ProjectileCaster)
 end
 
+--[=[
+	@function Cast
+	@parameter Start: Vector3
+	@parameter Direction: Vector3
+	@parameter VisualOverride: Instance?
+	@return Projectile
+	
+	Casts a new projectile in the game world.
+	VisualOverride is an optional parameter that allows you to override the default visual of the projectile.
+	VisualOverride must be a descendant of ReplicatedStorage.
+]=]
 function ProjectileCaster:Cast(Start: Vector3, Direction: Vector3, VisualOverride: Instance?)
 	if VisualOverride then
 		assert(
