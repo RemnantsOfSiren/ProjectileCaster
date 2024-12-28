@@ -34,6 +34,7 @@ type ProjectileCaster = typeof(setmetatable({} :: ProjectileCasterSettings, Proj
 
 --[=[
 	@function new
+	@within ProjectileCaster
 	@param Settings: { Size: number?, Speed: number?, MaxDistance: number?, Visual: Instance?, Config: ModuleScript?, Ignore: { Instance }?, Debug: boolean? }
 	@return ProjectileCaster
 	Creates a new ProjectileCaster instance.

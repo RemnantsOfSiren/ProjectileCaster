@@ -78,6 +78,22 @@ ServerInstance.CanTouch = false
 ServerInstance.Transparency = 0.5
 
 --[=[
+	@class Projectile
+	Projectile is used to manage and detect hits of a projectile in the game world.
+]=]
+
+--[=[
+	@prop Hit Signal
+	@within Projectile
+	Signal that fires when the projectile hits an object.
+	```lua
+	Projectile.Hit:Connect(function(Object: Instance, Position: Vector3, Normal: Vector3)
+		-- Code
+	end)
+	```
+]=]
+
+--[=[
 	@function new
 	@within Projectile
 	@param Data: { [string]: any }
@@ -185,7 +201,7 @@ end
 --[=[
 	@method Destroy
 	@within Projectile
-	
+
 	Destroys the projectile.
 	this method will destroy the projectile and all of its connections.
 	It's auto called if there is a max distance specified and the projectile reaches it.
