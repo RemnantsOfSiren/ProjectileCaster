@@ -3,6 +3,7 @@ name = "remnantsofsiren/projectilecaster"
 version = "0.0.5"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
+exclude = ["test", "Packages", "build", "test.project.json", "selene.toml", "README.md", ".gitignore", ".vscode"]
 description = """
     I wouldn't advice using this for production use, at the moment. Extremely experimental and only being uploaded for my own personal projects.
     Server/Client based projectile hit detection.

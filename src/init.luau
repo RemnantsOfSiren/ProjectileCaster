@@ -34,7 +34,7 @@ type ProjectileCaster = typeof(setmetatable({} :: ProjectileCasterSettings, Proj
 
 --[=[
 	@function new
-	@parameters Settings: { Size: number?, Speed: number?, MaxDistance: number?, Visual: Instance?, Config: ModuleScript?, Ignore: { Instance }?, Debug: boolean? }
+	@param Settings: { Size: number?, Speed: number?, MaxDistance: number?, Visual: Instance?, Config: ModuleScript?, Ignore: { Instance }?, Debug: boolean? }
 	@return ProjectileCaster
 	Creates a new ProjectileCaster instance.
 ]=]
@@ -68,10 +68,10 @@ function ProjectileCaster.new(Settings: ProjectileCasterSettings): ProjectileCas
 end
 
 --[=[
-	@function Cast
-	@parameter Start: Vector3
-	@parameter Direction: Vector3
-	@parameter VisualOverride: Instance?
+	@method Cast
+	@param Start: Vector3
+	@param Direction: Vector3
+	@param VisualOverride: Instance?
 	@return Projectile
 	
 	Casts a new projectile in the game world.

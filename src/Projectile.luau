@@ -80,9 +80,9 @@ ServerInstance.Transparency = 0.5
 --[=[
 	@function new
 	@within Projectile
-	@parameters Data: { [string]: any }
+	@param Data: { [string]: any }
 	@return Projectile
-	@description Creates a new Projectile instance.
+	Creates a new Projectile instance.
 ]=]
 function Projectile.new(Data: { [string]: any }): Projectile
 	Data.Id = HttpService:GenerateGUID(false)
@@ -176,7 +176,7 @@ end
 --[=[
 	@method UpdateDirection
 	@within Projectile
-	@parameter Direction Vector3
+	@param Direction Vector3
 ]=]
 function Projectile:UpdateDirection(Direction: Vector3)
 	self._Data.Direction = Direction
