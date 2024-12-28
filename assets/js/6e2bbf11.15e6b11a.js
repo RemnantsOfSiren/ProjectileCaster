@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[978],{63891:e=>{e.exports=JSON.parse('{"sourceUrl":"https://github.com/RemnantsOfSiren/ProjectileCaster/blob/master","baseUrl":"/ProjectileCaster/","classOrder":[],"apiCategories":[]}')}}]);
