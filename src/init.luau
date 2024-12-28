@@ -69,6 +69,7 @@ end
 
 --[=[
 	@method Cast
+	@within ProjectileCaster
 	@param Start: Vector3
 	@param Direction: Vector3
 	@param VisualOverride: Instance?

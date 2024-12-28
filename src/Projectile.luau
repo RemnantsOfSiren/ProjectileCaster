@@ -185,8 +185,8 @@ end
 --[=[
 	@method Destroy
 	@within Projectile
-	@description Destroys the projectile.
-
+	
+	Destroys the projectile.
 	this method will destroy the projectile and all of its connections.
 	It's auto called if there is a max distance specified and the projectile reaches it.
 ]=]
