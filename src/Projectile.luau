@@ -146,6 +146,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 					Result = workspace:Blockcast(
 						CFrame.lookAt(Data.Position, Data.Position + Data.Direction),
 						Vector3.one * Data.Size,
+						Data.Direction,
 						Data.__RaycastParams
 					)
 				end
