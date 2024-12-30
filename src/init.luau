@@ -100,4 +100,14 @@ function ProjectileCaster:Cast(Start: Vector3, Direction: Vector3, VisualOverrid
 	})
 end
 
+--[=[
+	@method Destroy
+	@within ProjectileCaster
+	@void
+	Destroys the ProjectileCaster instance.
+]=]
+function ProjectileCaster:Destroy()
+	table.clear(self)
+end
+
 return ProjectileCaster
