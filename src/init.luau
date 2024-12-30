@@ -97,6 +97,7 @@ function ProjectileCaster:Cast(Start: Vector3, Direction: Vector3, VisualOverrid
 		Visual = VisualOverride or self.Visual,
 		Direction = Direction,
 		MaxDistance = self.MaxDistance,
+		__RaycastParams = self.__RaycastParams
 	})
 end
 

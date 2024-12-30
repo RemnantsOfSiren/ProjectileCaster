@@ -19,7 +19,7 @@ type Projectile = typeof(setmetatable(
 ))
 
 local HitRegistry = {}
-local Projectiles: { Projectile } = {}
+local Projectiles: { [string]: Projectile } = {}
 
 task.spawn(function()
 	while true do
