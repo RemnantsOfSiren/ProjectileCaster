@@ -103,7 +103,6 @@ end
 --[=[
 	@method Destroy
 	@within ProjectileCaster
-	@void
 	Destroys the ProjectileCaster instance.
 ]=]
 function ProjectileCaster:Destroy()
