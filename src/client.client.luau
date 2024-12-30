@@ -37,9 +37,20 @@ function Projectile:Destroy()
 end
 
 function Projectile:Update(DeltaTime: number)
-	self.Visual.CFrame = CFrame.new(self.Position, self.Position + self.Direction)
+	local newCFrame = CFrame.lookAt(self.Position, self.Position + self.Direction)
 
-	local Result = workspace:Shapecast(self.Visual, Vector3.one * self.Size, self.__RaycastParams)
+	if self.Visual and self.Visual:IsA("Model") then
+		self.Visual:PivotTo(newCFrame)
+	else
+		self.Visual.CFrame = newCFrame
+	end
+
+	local Result = workspace:Blockcast(
+		CFrame.lookAt(self.Position, self.Position + self.Direction),
+		Vector3.one * self.Size,
+		self.Direction,
+		self.__RaycastParams
+	)
 
 	if Result then
 		local Hit = Result.Instance
