@@ -67,6 +67,7 @@ function Projectile:Update(DeltaTime: number)
 
 		if self.MaxDistance and self.DistanceTraveled >= self.MaxDistance then
 			self:Destroy()
+			return
 		end
 
 		local Step = self.Direction * self.Speed * DeltaTime
