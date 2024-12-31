@@ -206,6 +206,11 @@ end
 	@param Direction Vector3
 ]=]
 function Projectile:UpdateDirection(Direction: Vector3)
+	if Direction ~= Direction then
+		warn("Direction is NaN")
+		return
+	end
+	
 	if self and self._Data then
 		self._Data.Direction = Direction
 	end

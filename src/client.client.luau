@@ -47,7 +47,7 @@ function Projectile:Update(DeltaTime: number)
 		end
 
 		local Result = workspace:Blockcast(
-			CFrame.lookAt(self.Position, self.Position + self.Direction),
+			newCFrame,
 			Vector3.one * self.Size,
 			self.Direction,
 			self.__RaycastParams
@@ -121,7 +121,12 @@ function Projectile.new(Data: ProjectileData)
 	return self
 end
 
-Net.update.listen(function(Data: { Id: string, Position: Vector3, Direction: Vector3 })
+Net.update.listen(function(Data: { Id: string, Position: Vector3, Direction: Vector3, Time: number })
+	if (Data.Time - workspace:GetServerTimeNow()) > 0.2 then
+		warn("Difference between packet time and server time is too high, ignoring packet.")
+		return
+	end
+
 	local _Projectile = Projectiles[Data.Id]
 
 	if _Projectile then

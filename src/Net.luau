@@ -21,6 +21,7 @@ return ByteNet.defineNamespace("ProjectileCastNet", function()
 		update = ByteNet.definePacket({
 			value = ByteNet.struct({
 				Id = ByteNet.string,
+				Time = ByteNet.int32,
 				Position = ByteNet.vec3,
 				Direction = ByteNet.vec3,
 			}),
