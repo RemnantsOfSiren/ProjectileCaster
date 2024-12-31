@@ -94,6 +94,17 @@ ServerInstance.Transparency = 0.5
 ]=]
 
 --[=[
+	@prop Destroying Signal
+	@within Projectile
+	Signal that fires when the projectile is being destroyed.
+	```lua
+	Projectile.Destroying:Connect(function()
+		-- Code
+	end)
+	```
+]=]
+
+--[=[
 	@function new
 	@within Projectile
 	@param Data: { [string]: any }
@@ -110,9 +121,13 @@ function Projectile.new(Data: { [string]: any }): Projectile
 
 	local self = setmetatable({
 		Hit = Signal.new(),
+		Destroying = Signal.new(),
 		_Data = Data,
 		_Cleaner = Trove.new(),
 	}, Projectile)
+
+	self._Cleaner:Add(self.Hit, "Destroy")
+	self._Cleaner:Add(self.Destroying, "Destroy")
 
 	Data.Position = Data.Start
 	Data.Start = nil
@@ -229,8 +244,9 @@ function Projectile:Destroy()
 	Projectiles[self._Data.Id] = nil
 	Net.destroy.sendToAll(self._Data.Id)
 	self.Hit:Destroy()
+	self.Destroying:Fire()
 	if self._Cleaner then
-		self._Cleaner:Destroy()
+		task.defer(self._Cleaner.Destroy, self._Cleaner)
 	end
 	table.clear(self :: any)
 end
