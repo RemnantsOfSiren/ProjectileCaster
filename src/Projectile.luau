@@ -118,12 +118,12 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	Data.Start = nil
 
 	if Data.Debug then
-		local ServerInstance = self._Cleaner:Add(ServerInstance:Clone(), "Destroy")
-		ServerInstance.Name = Data.Id
-		ServerInstance.Size = Vector3.new(Data.Size, Data.Size, Data.Size)
-		ServerInstance.Position = Data.Position
-		ServerInstance.Parent = workspace.CurrentCamera.ServerProjectiles
-		self._ServerInstance = ServerInstance
+		local _ServerInstance = self._Cleaner:Add(ServerInstance:Clone(), "Destroy")
+		_ServerInstance.Name = Data.Id
+		_ServerInstance.Size = Vector3.one * Data.Size
+		_ServerInstance.Position = Data.Position
+		_ServerInstance.Parent = workspace.CurrentCamera.ServerProjectiles
+		self._ServerInstance = _ServerInstance
 	end
 
 	local DistanceTraveled = 0
@@ -141,7 +141,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 
 				if self._ServerInstance then
 					self._ServerInstance.Position = Data.Position
-					Result = workspace:Shapecast(ServerInstance, Vector3.one * Data.Size, Data.__RaycastParams)
+					Result = workspace:Shapecast(self._ServerInstance, Vector3.one * Data.Size, Data.__RaycastParams)
 				else
 					Result = workspace:Blockcast(
 						CFrame.lookAt(Data.Position, Data.Position + Data.Direction),
@@ -151,7 +151,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 					)
 				end
 
-				if Result then
+				if Result and Result.Instance then
 					task.spawn(RegisterHit, {
 						Id = Data.Id,
 						Time = workspace:GetServerTimeNow(),
@@ -181,13 +181,23 @@ function Projectile.new(Data: { [string]: any }): Projectile
 end
 
 --[=[
+	@method GetPosition
+	@within Projectile
+	@return Vector3
+	Returns the position of the projectile.
+]=]
+function Projectile:GetPosition()
+	return self._Data and self._Data.Position
+end
+
+--[=[
 	@method GetDirection
 	@within Projectile
 	@return Vector3
 	Returns the direction of the projectile.	
 ]=]
 function Projectile:GetDirection()
-	return self._Data.Direction
+	return self._Data and self._Data.Direction
 end
 
 --[=[
@@ -196,7 +206,9 @@ end
 	@param Direction Vector3
 ]=]
 function Projectile:UpdateDirection(Direction: Vector3)
-	self._Data.Direction = Direction
+	if self and self._Data then
+		self._Data.Direction = Direction
+	end
 end
 
 --[=[

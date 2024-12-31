@@ -52,7 +52,7 @@ function Projectile:Update(DeltaTime: number)
 		self.__RaycastParams
 	)
 
-	if Result then
+	if Result and Result.Instance then
 		local Hit = Result.Instance
 
 		Net.hit.send({
