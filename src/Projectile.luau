@@ -133,6 +133,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 			while true do
 				Net.update.sendToAll({
 					Id = Data.Id,
+					Time = workspace:GetServerTimeNow(),
 					Position = Data.Position,
 					Direction = Data.Direction,
 				})
@@ -210,7 +211,7 @@ function Projectile:UpdateDirection(Direction: Vector3)
 		warn("Direction is NaN")
 		return
 	end
-	
+
 	if self and self._Data then
 		self._Data.Direction = Direction
 	end
