@@ -37,40 +37,42 @@ function Projectile:Destroy()
 end
 
 function Projectile:Update(DeltaTime: number)
-	local newCFrame = CFrame.lookAt(self.Position, self.Position + self.Direction)
+	if self and self.Position and self.Direction and self.Speed then
+		local newCFrame = CFrame.lookAt(self.Position, self.Position + self.Direction)
 
-	if self.Visual and self.Visual:IsA("Model") then
-		self.Visual:PivotTo(newCFrame)
-	else
-		self.Visual.CFrame = newCFrame
+		if self.Visual and self.Visual:IsA("Model") then
+			self.Visual:PivotTo(newCFrame)
+		else
+			self.Visual.CFrame = newCFrame
+		end
+
+		local Result = workspace:Blockcast(
+			CFrame.lookAt(self.Position, self.Position + self.Direction),
+			Vector3.one * self.Size,
+			self.Direction,
+			self.__RaycastParams
+		)
+
+		if Result and Result.Instance then
+			local Hit = Result.Instance
+
+			Net.hit.send({
+				Id = self.Id,
+				Time = workspace:GetServerTimeNow(),
+				Normal = Result.Normal,
+				Object = if Hit and Hit:IsDescendantOf(VisualFolder) then tostring(Hit) else Hit,
+				Position = Result.Position,
+			})
+		end
+
+		if self.MaxDistance and self.DistanceTraveled >= self.MaxDistance then
+			self:Destroy()
+		end
+
+		local Step = self.Direction * self.Speed * DeltaTime
+		self.Position += Step
+		self.DistanceTraveled += Step.Magnitude
 	end
-
-	local Result = workspace:Blockcast(
-		CFrame.lookAt(self.Position, self.Position + self.Direction),
-		Vector3.one * self.Size,
-		self.Direction,
-		self.__RaycastParams
-	)
-
-	if Result and Result.Instance then
-		local Hit = Result.Instance
-
-		Net.hit.send({
-			Id = self.Id,
-			Time = workspace:GetServerTimeNow(),
-			Normal = Result.Normal,
-			Object = if Hit and Hit:IsDescendantOf(VisualFolder) then tostring(Hit) else Hit,
-			Position = Result.Position,
-		})
-	end
-
-	if self.MaxDistance and self.DistanceTraveled >= self.MaxDistance then
-		self:Destroy()
-	end
-
-	local Step = self.Direction * self.Speed * DeltaTime
-	self.Position += Step
-	self.DistanceTraveled += Step.Magnitude
 end
 
 function Projectile.new(Data: ProjectileData)
