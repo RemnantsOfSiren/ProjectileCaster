@@ -146,36 +146,38 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	self._Cleaner:Add(
 		task.spawn(function()
 			while true do
-				Net.update.sendToAll({
+				task.spawn(Net.update.sendToAll, {
 					Id = Data.Id,
 					Time = workspace:GetServerTimeNow(),
 					Position = Data.Position,
 					Direction = Data.Direction,
 				})
 
-				local Result
+				task.spawn(function()
+					local Result
 
-				if self._ServerInstance then
-					self._ServerInstance.Position = Data.Position
-					Result = workspace:Shapecast(self._ServerInstance, Vector3.one * Data.Size, Data.__RaycastParams)
-				else
-					Result = workspace:Blockcast(
-						CFrame.lookAt(Data.Position, Data.Position + Data.Direction),
-						Vector3.one * Data.Size,
-						Data.Direction,
-						Data.__RaycastParams
-					)
-				end
+					if self._ServerInstance then
+						self._ServerInstance.Position = Data.Position
+						Result = workspace:Shapecast(self._ServerInstance, Vector3.one * Data.Size, Data.__RaycastParams)
+					else
+						Result = workspace:Blockcast(
+							CFrame.lookAt(Data.Position, Data.Position + Data.Direction),
+							Vector3.one * Data.Size,
+							Data.Direction,
+							Data.__RaycastParams
+						)
+					end
 
-				if Result and Result.Instance then
-					task.spawn(RegisterHit, {
-						Id = Data.Id,
-						Time = workspace:GetServerTimeNow(),
-						Normal = Result.Normal,
-						Object = Result.Instance,
-						Position = Result.Position,
-					}, "Server")
-				end
+					if Result and Result.Instance then
+						RegisterHit({
+							Id = Data.Id,
+							Time = workspace:GetServerTimeNow(),
+							Normal = Result.Normal,
+							Object = Result.Instance,
+							Position = Result.Position,
+						}, "Server")
+					end
+				end)
 
 				if Data.MaxDistance and DistanceTraveled >= Data.MaxDistance then
 					self:Destroy()
@@ -183,6 +185,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 				end
 
 				local DeltaTime = task.wait()
+
 				local Step = Data.Direction * Data.Speed * DeltaTime
 				Data.Position += Step
 				DistanceTraveled += Step.Magnitude
@@ -241,14 +244,16 @@ end
 	It's auto called if there is a max distance specified and the projectile reaches it.
 ]=]
 function Projectile:Destroy()
-	Projectiles[self._Data.Id] = nil
-	Net.destroy.sendToAll(self._Data.Id)
-	self.Hit:Destroy()
-	self.Destroying:Fire()
-	if self._Cleaner then
-		task.defer(self._Cleaner.Destroy, self._Cleaner)
+	if self._Data then
+		Projectiles[self._Data.Id] = nil
+		Net.destroy.sendToAll(self._Data.Id)
+		self.Hit:Destroy()
+		self.Destroying:Fire()
+		if self._Cleaner then
+			task.defer(self._Cleaner.Destroy, self._Cleaner)
+		end
+		table.clear(self :: any)
 	end
-	table.clear(self :: any)
 end
 
 Net.hit.listen(function(Data)
