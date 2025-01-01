@@ -37,6 +37,10 @@ function Projectile:Destroy()
 end
 
 function Projectile:Update(DeltaTime: number)
+	if self.DistanceTraveled and self.MaxDistance and self.DistanceTraveled >= self.MaxDistance then
+		return
+	end
+
 	if self and self.Position and self.Direction and self.Speed then
 		local newCFrame = CFrame.lookAt(self.Position, self.Position + self.Direction)
 
@@ -56,18 +60,13 @@ function Projectile:Update(DeltaTime: number)
 		if Result and Result.Instance then
 			local Hit = Result.Instance
 
-			Net.hit.send({
+			task.spawn(Net.hit.send, {
 				Id = self.Id,
 				Time = workspace:GetServerTimeNow(),
 				Normal = Result.Normal,
 				Object = if Hit and Hit:IsDescendantOf(VisualFolder) then tostring(Hit) else Hit,
 				Position = Result.Position,
 			})
-		end
-
-		if self.MaxDistance and self.DistanceTraveled >= self.MaxDistance then
-			self:Destroy()
-			return
 		end
 
 		local Step = self.Direction * self.Speed * DeltaTime
@@ -123,7 +122,7 @@ function Projectile.new(Data: ProjectileData)
 end
 
 Net.update.listen(function(Data: { Id: string, Position: Vector3, Direction: Vector3, Time: number })
-	if (Data.Time - workspace:GetServerTimeNow()) > 0.2 then
+	if (Data.Time - workspace:GetServerTimeNow()) > 0.1 then
 		warn("Difference between packet time and server time is too high, ignoring packet.")
 		return
 	end
