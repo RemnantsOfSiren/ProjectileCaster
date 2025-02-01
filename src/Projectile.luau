@@ -256,7 +256,7 @@ function Projectile:Destroy()
 	end
 end
 
-Net.hit.listen(function(Data)
+Net.packets.hit.listen(function(Data)
 	local Success, Error = pcall(RegisterHit, Data)
 
 	if not Success then
