@@ -121,7 +121,7 @@ function Projectile.new(Data: ProjectileData)
 	return self
 end
 
-Net.update.listen(function(Data: { Id: string, Position: Vector3, Direction: Vector3, Time: number })
+Net.packets.update.listen(function(Data: { Id: string, Position: Vector3, Direction: Vector3, Time: number })
 	if (Data.Time - workspace:GetServerTimeNow()) > 0.1 then
 		warn("Difference between packet time and server time is too high, ignoring packet.")
 		return
@@ -140,7 +140,7 @@ Net.update.listen(function(Data: { Id: string, Position: Vector3, Direction: Vec
 	end
 end)
 
-Net.destroy.listen(
+Net.packets.destroy.listen(
 	function(Id: string) -- add a destroy case incase the server wants the projectile to end earlier MaxDistance
 		local _Projectile = Projectiles[Id]
 
@@ -152,4 +152,4 @@ Net.destroy.listen(
 	end
 )
 
-Net.create.listen(Projectile.new)
+Net.packets.create.listen(Projectile.new)

@@ -1,6 +1,6 @@
 [package]
 name = "remnantsofsiren/projectilecaster"
-version = "0.1.5"
+version = "0.1.6"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 exclude = ["test", "Packages", "build", "test.project.json", "selene.toml", "README.md", ".gitignore", ".vscode"]
@@ -17,4 +17,4 @@ description = """
 [dependencies]
 Trove = "sleitnick/trove@1.5.0"
 Signal = "data-oriented-house/lemonsignal@1.10.0"
-ByteNet = "ffrostflame/bytenet@0.4.6"
+ByteNet = "elitriare/bytenet-max@0.1.9"

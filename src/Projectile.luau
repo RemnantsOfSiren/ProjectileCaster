@@ -115,7 +115,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	Data.Id = HttpService:GenerateGUID(false)
 	Data.Time = workspace:GetServerTimeNow()
 
-	Net.create.sendToAll(table.clone(Data))
+	Net.packets.create.sendToAll(table.clone(Data))
 
 	Data.Time = nil
 
@@ -146,7 +146,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	self._Cleaner:Add(
 		task.spawn(function()
 			while true do
-				task.spawn(Net.update.sendToAll, {
+				task.spawn(Net.packets.update.sendToAll, {
 					Id = Data.Id,
 					Time = workspace:GetServerTimeNow(),
 					Position = Data.Position,
@@ -246,7 +246,7 @@ end
 function Projectile:Destroy()
 	if self._Data then
 		Projectiles[self._Data.Id] = nil
-		Net.destroy.sendToAll(self._Data.Id)
+		Net.packets.destroy.sendToAll(self._Data.Id)
 		self.Hit:Destroy()
 		self.Destroying:Fire()
 		if self._Cleaner then
@@ -266,7 +266,7 @@ end)
 
 local function OnPlayerAdded(Player: Player)
 	for _, _Projectile in Projectiles do
-		Net.create.sendTo(_Projectile._Data, Player)
+		Net.packets.create.sendTo(_Projectile._Data, Player)
 	end
 end
 
