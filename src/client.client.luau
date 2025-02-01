@@ -60,7 +60,7 @@ function Projectile:Update(DeltaTime: number)
 		if Result and Result.Instance then
 			local Hit = Result.Instance
 
-			task.spawn(Net.hit.send, {
+			task.spawn(Net.packets.hit.send, {
 				Id = self.Id,
 				Time = workspace:GetServerTimeNow(),
 				Normal = Result.Normal,
