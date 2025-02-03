@@ -153,3 +153,9 @@ Net.packets.destroy.listen(
 )
 
 Net.packets.create.listen(Projectile.new)
+
+return {
+	GetAll = function()
+		return Projectiles
+	end,
+}

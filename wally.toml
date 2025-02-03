@@ -1,6 +1,6 @@
 [package]
 name = "remnantsofsiren/projectilecaster"
-version = "0.1.8"
+version = "0.1.9"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 exclude = ["test", "Packages", "build", "test.project.json", "selene.toml", "README.md", ".gitignore", ".vscode"]
@@ -9,9 +9,7 @@ description = """
     Server/Client based projectile hit detection.
 
     API: https://remnantsofsiren.github.io/ProjectileCaster
-
-    requires:
-        - emitLegacyScripts: false
+    --> you will need to just require the module on the client in-order for things to render. Prior I used emitLegacyScripts however it caused bytenet to throw issues
 """
 
 [dependencies]
