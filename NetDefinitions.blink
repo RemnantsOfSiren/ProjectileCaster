@@ -1,0 +1,55 @@
+option Casing = Camel
+option ClientOutput = "src/Net/client.luau"
+option ServerOutput = "src/Net/server.luau"
+
+struct Projectile {
+    Id: string,
+    Size: u16,
+    Time: f64,
+    Speed: u16,
+    Start: vector<i32>,
+    Direction: vector(0..2),
+    Config: Instance?,
+    Visual: Instance?,
+    Ignore: Instance[0..255]?,
+    MaxDistance: u16?,
+}
+
+event create {
+    From: Server,
+    Type: Reliable,
+    Call: SingleSync,
+    Data: Projectile 
+}
+
+event update {
+    From: Server,
+    Type: Unreliable,
+    Call: ManySync,
+    Data: struct {
+        Id: string,
+        Time: f64,
+        Position: vector<i32>,
+        Direction: vector(0..2)
+    }
+}
+
+event destroy {
+    From: Server,
+    Type: Reliable,
+    Call: SingleSync,
+    Data: string,
+}
+
+event hit {
+    From: Client,
+    Type: Reliable,
+    Call: SingleSync,
+    Data: struct {
+        Id: string,
+        Time: f64,
+        Normal: vector(0..2),
+        Object: Instance?,
+        Position: vector<i32>
+    }
+}

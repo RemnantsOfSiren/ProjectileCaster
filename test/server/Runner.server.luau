@@ -17,10 +17,10 @@ local End = Vector3.new(0, 50, 1000)
 while true do
     local Projectile = Caster:Cast(Start, (End - Start).Unit)
     
-    Projectile.Hit:Connect(function(Hit, Position, Normal)
+    Projectile.Hit:Connect(function(_, _, Normal)
         local Direction = Projectile:GetDirection()
         Projectile:UpdateDirection(Direction - (2 * Direction:Dot(Normal) * Normal))
     end)
 
-    task.wait(.5)
+    task.wait(.1)
 end

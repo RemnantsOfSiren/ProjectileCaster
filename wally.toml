@@ -15,4 +15,3 @@ description = """
 [dependencies]
 Trove = "sleitnick/trove@1.5.0"
 Signal = "data-oriented-house/lemonsignal@1.10.0"
-ByteNet = "elitriare/bytenet-max@0.1.9"

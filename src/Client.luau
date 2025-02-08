@@ -1,7 +1,7 @@
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
 
-local Net = require(script.Parent.Net)
+local Net = require(script.Parent.Net.Client)
 local Trove = require(script.Parent.Parent.Trove)
 
 local Projectiles = {}
@@ -60,7 +60,7 @@ function Projectile:Update(DeltaTime: number)
 		if Result and Result.Instance then
 			local Hit = Result.Instance
 
-			task.spawn(Net.packets.hit.send, {
+			task.spawn(Net.hit.fire, {
 				Id = self.Id,
 				Time = workspace:GetServerTimeNow(),
 				Normal = Result.Normal,
@@ -121,7 +121,7 @@ function Projectile.new(Data: ProjectileData)
 	return self
 end
 
-Net.packets.update.listen(function(Data: { Id: string, Position: Vector3, Direction: Vector3, Time: number })
+Net.update.on(function(Data: { Id: string, Position: Vector3, Direction: Vector3, Time: number })
 	if (Data.Time - workspace:GetServerTimeNow()) > 0.1 then
 		warn("Difference between packet time and server time is too high, ignoring packet.")
 		return
@@ -140,7 +140,7 @@ Net.packets.update.listen(function(Data: { Id: string, Position: Vector3, Direct
 	end
 end)
 
-Net.packets.destroy.listen(
+Net.destroy.on(
 	function(Id: string) -- add a destroy case incase the server wants the projectile to end earlier MaxDistance
 		local _Projectile = Projectiles[Id]
 
@@ -152,7 +152,7 @@ Net.packets.destroy.listen(
 	end
 )
 
-Net.packets.create.listen(Projectile.new)
+Net.create.on(Projectile.new)
 
 return {
 	GetAll = function()

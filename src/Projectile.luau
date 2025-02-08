@@ -2,7 +2,7 @@
 local PlayerService = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
-local Net = require(script.Parent.Net)
+local Net = require(script.Parent.Net.Server)
 local Trove = require(script.Parent.Parent.Trove)
 local Signal = require(script.Parent.Parent.Signal)
 
@@ -46,7 +46,7 @@ task.spawn(function()
 end)
 
 local function RegisterHit(
-	Data: { Id: string, Time: number, Position: Vector3, Normal: Vector3, Object: Instance },
+	Data: { Id: string, Time: number, Position: Vector3, Normal: Vector3, Object: Instance? },
 	Player: Player | "Server"
 )
 	if not HitRegistry[Data.Id] then
@@ -115,7 +115,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	Data.Id = HttpService:GenerateGUID(false)
 	Data.Time = workspace:GetServerTimeNow()
 
-	Net.packets.create.sendToAll(table.clone(Data))
+	Net.create.fireAll(table.clone(Data))
 
 	Data.Time = nil
 
@@ -146,7 +146,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	self._Cleaner:Add(
 		task.spawn(function()
 			while true do
-				task.spawn(Net.packets.update.sendToAll, {
+				task.spawn(Net.update.fireAll, {
 					Id = Data.Id,
 					Time = workspace:GetServerTimeNow(),
 					Position = Data.Position,
@@ -246,7 +246,7 @@ end
 function Projectile:Destroy()
 	if self._Data then
 		Projectiles[self._Data.Id] = nil
-		Net.packets.destroy.sendToAll(self._Data.Id)
+		Net.destroy.fireAll(self._Data.Id)
 		self.Hit:Destroy()
 		self.Destroying:Fire()
 		if self._Cleaner then
@@ -256,8 +256,10 @@ function Projectile:Destroy()
 	end
 end
 
-Net.packets.hit.listen(function(Data)
-	local Success, Error = pcall(RegisterHit, Data)
+Net.hit.on(function(Player, Data)
+	local Success, Error = pcall(function() 
+		RegisterHit(Data, Player) 
+	end)
 
 	if not Success then
 		warn(Error)
@@ -266,7 +268,7 @@ end)
 
 local function OnPlayerAdded(Player: Player)
 	for _, _Projectile in Projectiles do
-		Net.packets.create.sendTo(_Projectile._Data, Player)
+		Net.create.fire(Player, _Projectile._Data)
 	end
 end
 
