@@ -34,7 +34,9 @@ task.spawn(function()
 							table.sort(HitInfo.__Hits, function(A, B)
 								return A.Name == "Server" or A.Time < B.Time
 							end)
-							_Projectile.Hit:Fire(Object, unpack(HitInfo.__Hits[1]))
+							if _Projectile and _Projectile.Hit then
+								_Projectile.Hit:Fire(Object, unpack(HitInfo.__Hits[1]))
+							end
 						end
 					end
 				end

@@ -122,7 +122,7 @@ function Projectile.new(Data: ProjectileData)
 end
 
 Net.update.on(function(Data: { Id: string, Position: Vector3, Direction: Vector3, Time: number })
-	if (Data.Time - workspace:GetServerTimeNow()) > 0.1 then
+	if (Data.Time - workspace:GetServerTimeNow()) > 0.2 then
 		warn("Difference between packet time and server time is too high, ignoring packet.")
 		return
 	end
@@ -154,6 +154,12 @@ Net.destroy.on(
 
 Net.create.on(Projectile.new)
 
+--[=[
+	@function GetAll
+	@within ProjectileCaster
+	@return Projectile[]
+	returns all projectiles that are currently active
+]=]
 return {
 	GetAll = function()
 		return Projectiles

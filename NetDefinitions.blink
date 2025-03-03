@@ -1,6 +1,7 @@
 option Casing = Camel
 option ClientOutput = "src/Net/client.luau"
 option ServerOutput = "src/Net/server.luau"
+option Name = "ProjectileCaster"
 
 struct Projectile {
     Id: string,
@@ -24,7 +25,7 @@ event create {
 
 event update {
     From: Server,
-    Type: Unreliable,
+    Type: Reliable,
     Call: ManySync,
     Data: struct {
         Id: string,
