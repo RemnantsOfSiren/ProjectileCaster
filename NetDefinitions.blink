@@ -1,15 +1,23 @@
 option Casing = Camel
 option ClientOutput = "src/Net/client.luau"
 option ServerOutput = "src/Net/server.luau"
-option Name = "ProjectileCaster"
+option RemoteScope = "Cardinal"
+
+-- Projectiles replicate as trajectory *segments*, not per-frame positions.
+-- A segment is (Origin, Direction, Speed, Time); both peers evaluate
+-- Origin + Direction * Speed * (Clock - Time) against workspace:GetServerTimeNow().
+-- Nothing is sent until the trajectory actually changes, so these events are rare
+-- and every one of them is load-bearing -- hence Reliable.
 
 struct Projectile {
-    Id: string,
+    Id: u32,
+    Seq: u8,
     Size: u16,
     Time: f64,
     Speed: u16,
-    Start: vector<i32>,
+    Origin: vector<f32>,
     Direction: vector(0..2),
+    Distance: u32,
     Config: Instance?,
     Visual: Instance?,
     Ignore: Instance[0..255]?,
@@ -20,7 +28,7 @@ event create {
     From: Server,
     Type: Reliable,
     Call: SingleSync,
-    Data: Projectile 
+    Data: Projectile
 }
 
 event update {
@@ -28,10 +36,12 @@ event update {
     Type: Reliable,
     Call: ManySync,
     Data: struct {
-        Id: string,
+        Id: u32,
+        Seq: u8,
         Time: f64,
-        Position: vector<i32>,
-        Direction: vector(0..2)
+        Origin: vector<f32>,
+        Direction: vector(0..2),
+        Distance: u32
     }
 }
 
@@ -39,7 +49,7 @@ event destroy {
     From: Server,
     Type: Reliable,
     Call: SingleSync,
-    Data: string,
+    Data: u32,
 }
 
 event hit {
@@ -47,10 +57,10 @@ event hit {
     Type: Reliable,
     Call: SingleSync,
     Data: struct {
-        Id: string,
+        Id: u32,
         Time: f64,
         Normal: vector(0..2),
-        Object: Instance?,
-        Position: vector<i32>
+        Object: Instance,
+        Position: vector<f32>
     }
 }

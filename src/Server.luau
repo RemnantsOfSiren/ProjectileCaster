@@ -20,7 +20,7 @@ type ProjectileCasterSettings = {
 local ServerProjectiles = Instance.new("Folder")
 ServerProjectiles.Name = "ServerProjectiles"
 ServerProjectiles:AddTag("ProjectileCasterIgnore")
-ServerProjectiles.Parent = workspace.CurrentCamera
+ServerProjectiles.Parent = workspace
 
 type ProjectileCaster = typeof(setmetatable({} :: ProjectileCasterSettings, ProjectileCaster))
 
@@ -63,6 +63,7 @@ function ProjectileCaster.new(Settings: ProjectileCasterSettings): ProjectileCas
 		Debug = Settings.Debug,
 		Visual = Settings.Visual,
 		Config = Settings.Config,
+		Ignore = Settings.Ignore,
 		MaxDistance = Settings.MaxDistance,
 		__RaycastParams = RaycastParams,
 	}, ProjectileCaster)
@@ -95,6 +96,7 @@ function ProjectileCaster:Cast(Start: Vector3, Direction: Vector3, VisualOverrid
 		Debug = self.Debug,
 		Config = self.Config,
 		Visual = VisualOverride or self.Visual,
+		Ignore = self.Ignore,
 		Direction = Direction,
 		MaxDistance = self.MaxDistance,
 		__RaycastParams = self.__RaycastParams
