@@ -22,11 +22,7 @@ local Signal = require(script.Parent.Parent.Signal)
 	the network traffic.
 ]]
 
---> How long a hit is held open for other peers to corroborate it.
 local HIT_GRACE = 0.25
-
---> Nudge applied along the new heading when a hit rebases a trajectory, so the
---> next sweep does not start flush against the surface it just left.
 local SURFACE_OFFSET = 0.01
 
 local Projectile = {}
@@ -80,8 +76,6 @@ local HitRegistry: { [number]: { [Instance]: HitBucket } } = {}
 local NextId = 0
 
 local function AllocateId(): number
-	--> u32 on the wire. A projectile still alive after 2^32 casts is not a
-	--> collision worth defending against.
 	NextId = (NextId + 1) % 4294967296
 	return NextId
 end
@@ -135,7 +129,6 @@ local function RegisterHit(
 		Buckets[Data.Object] = Bucket
 	end
 
-	--> One vote per peer.
 	for _, Report in Bucket.Reports do
 		if Report.Source == Source then
 			return
@@ -192,7 +185,7 @@ local function ResolveHits(Now: number)
 					Data.__ImpactTime = math.clamp(Best.Time, Data.Time, Now)
 				end
 
-				_Projectile.Hit:Fire(Object, Best.Position, Best.Normal, Best.Source)
+				_Projectile.Hit:Fire(Object, Best.Position, Best.Normal)
 
 				if Data then
 					Data.__ImpactTime = nil
@@ -282,7 +275,7 @@ RunService.PostSimulation:Connect(Step)
 	@within Projectile
 	Signal that fires when the projectile hits an object.
 	```lua
-	Projectile.Hit:Connect(function(Object: Instance, Position: Vector3, Normal: Vector3, Source: Player | "Server")
+	Projectile.Hit:Connect(function(Object: Instance, Position: Vector3, Normal: Vector3)
 		-- Code
 	end)
 	```
