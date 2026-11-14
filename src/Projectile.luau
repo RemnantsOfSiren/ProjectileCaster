@@ -7,21 +7,6 @@ local Trajectory = require(script.Parent.Trajectory)
 local Trove = require(script.Parent.Parent.Trove)
 local Signal = require(script.Parent.Parent.Signal)
 
---[[
-	Replication model
-	-----------------
-	Projectiles replicate as trajectory segments (see Trajectory.luau), not as a
-	stream of per-frame positions. A packet only goes out when the trajectory
-	itself changes -- creation, a direction change, destruction -- because between
-	those points both peers derive the same position from the shared clock. There
-	is no drift to correct, so there is nothing to correct every frame.
-
-	Every live projectile is stepped by one shared connection rather than by its
-	own coroutine. Casting N projectiles used to allocate ~3N coroutines per frame;
-	the resulting GC pressure was itself a source of frame hitching, independent of
-	the network traffic.
-]]
-
 local HIT_GRACE = 0.25
 local SURFACE_OFFSET = 0.01
 
@@ -42,9 +27,12 @@ export type Segment = {
 	Config: Instance?,
 	Ignore: { Instance }?,
 	__RaycastParams: RaycastParams,
+	__Rotation: CFrame,
+	__SizeVector: Vector3,
 	__LastPosition: Vector3,
 	__LastTime: number,
 	__ImpactTime: number?,
+	__Resolved: { [Instance]: number }?,
 	__DebugInstance: BasePart?,
 }
 
@@ -108,8 +96,26 @@ local function RegisterHit(
 	Data: { Id: number, Time: number, Position: Vector3, Normal: Vector3, Object: Instance },
 	Source: Player | "Server"
 )
-	if not Projectiles[Data.Id] then
+	local _Projectile = Projectiles[Data.Id]
+	local Segment = _Projectile and _Projectile._Data
+
+	if not Segment then
 		return
+	end
+
+	local Now = workspace:GetServerTimeNow()
+
+	if Source ~= "Server" then
+		local Resolved = Segment.__Resolved
+		local Expiry = if Resolved then Resolved[Data.Object] else nil
+
+		if Resolved and Expiry then
+			if Now < Expiry then
+				return
+			end
+
+			Resolved[Data.Object] = nil
+		end
 	end
 
 	local Buckets = HitRegistry[Data.Id]
@@ -123,7 +129,7 @@ local function RegisterHit(
 
 	if not Bucket then
 		Bucket = {
-			Deadline = workspace:GetServerTimeNow() + HIT_GRACE,
+			Deadline = Now + HIT_GRACE,
 			Reports = {},
 		}
 		Buckets[Data.Object] = Bucket
@@ -152,6 +158,10 @@ local function CompareReports(A: HitReport, B: HitReport): boolean
 end
 
 local function ResolveHits(Now: number)
+	if next(HitRegistry) == nil then
+		return
+	end
+
 	local PlayerCount = #PlayerService:GetPlayers()
 
 	for Id, Buckets in HitRegistry do
@@ -182,6 +192,14 @@ local function ResolveHits(Now: number)
 				local Data = _Projectile._Data
 
 				if Data then
+					local Resolved = Data.__Resolved
+
+					if not Resolved then
+						Resolved = {}
+						Data.__Resolved = Resolved
+					end
+
+					Resolved[Object] = Now + HIT_GRACE
 					Data.__ImpactTime = math.clamp(Best.Time, Data.Time, Now)
 				end
 
@@ -226,18 +244,18 @@ local function Step()
 				Result = workspace:Shapecast(Data.__DebugInstance, Displacement, Data.__RaycastParams)
 			else
 				Result = workspace:Blockcast(
-					Trajectory.LookAlong(Previous, Displacement),
-					Vector3.one * Data.Size,
+					Data.__Rotation + Previous,
+					Data.__SizeVector,
 					Displacement,
 					Data.__RaycastParams
 				)
 			end
 
-			if Result and Result.Instance then
+			if Result and Result.Instance and Trajectory.IsFinite(Result.Position) then
 				RegisterHit({
 					Id = Id,
 					Time = Data.__LastTime + Result.Distance / Data.Speed,
-					Normal = Result.Normal,
+					Normal = Trajectory.ImpactNormal(Result.Normal, Displacement),
 					Object = Result.Instance,
 					Position = Result.Position,
 				}, "Server")
@@ -247,7 +265,9 @@ local function Step()
 		Data.__LastPosition = Position
 		Data.__LastTime = Now
 
-		if Data.MaxDistance and Trajectory.DistanceAt(Data, Now) >= Data.MaxDistance then
+		local MaxDistance = Data.MaxDistance
+
+		if MaxDistance and Data.Distance + Data.Speed * (Now - Data.Time) >= MaxDistance then
 			table.insert(Expired, _Projectile)
 		end
 	end
@@ -303,6 +323,7 @@ function Projectile.new(Data: { [string]: any }): Projectile
 	assert(Trajectory.IsValidDirection(Data.Direction), "@[ProjectileCaster] - Direction must be finite and non-zero.")
 
 	local Now = workspace:GetServerTimeNow()
+	local Direction = Data.Direction.Unit
 
 	local Segment: Segment = {
 		Id = AllocateId(),
@@ -311,13 +332,15 @@ function Projectile.new(Data: { [string]: any }): Projectile
 		Speed = Data.Speed,
 		Time = Now,
 		Origin = Data.Start,
-		Direction = Data.Direction.Unit,
+		Direction = Direction,
 		Distance = 0,
 		MaxDistance = Data.MaxDistance,
 		Visual = Data.Visual,
 		Config = Data.Config,
 		Ignore = Data.Ignore,
 		__RaycastParams = Data.__RaycastParams,
+		__Rotation = Trajectory.Rotation(Direction),
+		__SizeVector = Vector3.one * Data.Size,
 		__LastPosition = Data.Start,
 		__LastTime = Now,
 	}
@@ -403,6 +426,7 @@ function Projectile:UpdateDirection(Direction: Vector3)
 	Data.Origin = if Impact then Position + Data.Direction * SURFACE_OFFSET else Position
 	Data.Time = Now
 	Data.Seq = (Data.Seq + 1) % 256
+	Data.__Rotation = Trajectory.Rotation(Data.Direction)
 	Data.__LastPosition = Data.Origin
 	Data.__LastTime = Now
 
@@ -445,6 +469,15 @@ function Projectile:Destroy()
 end
 
 Net.hit.on(function(Player, Data)
+	if
+		Data.Time ~= Data.Time
+		or math.abs(Data.Time) == math.huge
+		or not Trajectory.IsFinite(Data.Position)
+		or not Trajectory.IsValidDirection(Data.Normal)
+	then
+		return
+	end
+
 	local Success, Error = pcall(RegisterHit, Data, Player)
 
 	if not Success then

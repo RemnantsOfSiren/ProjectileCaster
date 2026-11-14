@@ -49,6 +49,25 @@ local function GetBaseIgnore(): { Instance }
 	return List :: { Instance }
 end
 
+local MAX_CACHED_PARAMS = 32
+local ParamsCache: { { Ignore: { Instance }, Params: RaycastParams } } = {}
+
+local function IsSameList(A: { Instance }, B: { Instance }): boolean
+	local Count = #A
+
+	if Count ~= #B then
+		return false
+	end
+
+	for Index = 1, Count do
+		if A[Index] ~= B[Index] then
+			return false
+		end
+	end
+
+	return true
+end
+
 local function GetRaycastParams(Ignore: { Instance }?): RaycastParams
 	if not Ignore or #Ignore == 0 then
 		local Params = SharedParams
@@ -63,6 +82,12 @@ local function GetRaycastParams(Ignore: { Instance }?): RaycastParams
 		return Params :: RaycastParams
 	end
 
+	for _, Entry in ParamsCache do
+		if IsSameList(Entry.Ignore, Ignore) then
+			return Entry.Params
+		end
+	end
+
 	local List = table.clone(GetBaseIgnore())
 	table.move(Ignore, 1, #Ignore, #List + 1, List)
 
@@ -70,12 +95,19 @@ local function GetRaycastParams(Ignore: { Instance }?): RaycastParams
 	Params.FilterType = Enum.RaycastFilterType.Exclude
 	Params.FilterDescendantsInstances = List
 
+	if #ParamsCache >= MAX_CACHED_PARAMS then
+		table.clear(ParamsCache)
+	end
+
+	table.insert(ParamsCache, { Ignore = Ignore, Params = Params })
+
 	return Params
 end
 
 local function InvalidateIgnoreCache()
 	BaseIgnore = nil
 	SharedParams = nil
+	table.clear(ParamsCache)
 end
 
 CollectionService:GetInstanceAddedSignal(IGNORE_TAG):Connect(InvalidateIgnoreCache)
@@ -105,10 +137,9 @@ function Projectile:Render(Now: number, DeltaTime: number)
 		self.VisualOffset = Vector3.zero
 	end
 
-	local Position = Trajectory.PositionAt(self, Now) + self.VisualOffset
-	local CFrameAt = Trajectory.LookAlong(Position, self.Direction)
+	local CFrameAt = self.Rotation + (Trajectory.PositionAt(self, Now) + self.VisualOffset)
 
-	if Visual:IsA("Model") then
+	if self.IsModel then
 		Visual:PivotTo(CFrameAt)
 	else
 		Visual.CFrame = CFrameAt
@@ -129,6 +160,8 @@ function Projectile.new(Data: ProjectileData)
 		Distance = Data.Distance,
 		MaxDistance = Data.MaxDistance,
 		VisualOffset = Vector3.zero,
+		Rotation = Trajectory.Rotation(Data.Direction),
+		SizeVector = Vector3.one * Data.Size,
 		Cleaner = Trove.new(),
 		RaycastParams = GetRaycastParams(Data.Ignore),
 	}, Projectile)
@@ -141,6 +174,7 @@ function Projectile.new(Data: ProjectileData)
 
 	if Data.Visual then
 		self.Visual = self.Cleaner:Add(Data.Visual:Clone(), "Destroy")
+		self.IsModel = self.Visual:IsA("Model")
 		self.Visual.Parent = VisualFolder
 	end
 
@@ -156,26 +190,32 @@ local function Simulate()
 	for Id, self in Projectiles do
 		local Position = Trajectory.PositionAt(self, Now)
 		local Displacement = Position - self.LastPosition
+		local Hit: Instance? = nil
 
 		if Displacement.Magnitude > Trajectory.Epsilon then
 			local Result = workspace:Blockcast(
-				Trajectory.LookAlong(self.LastPosition, Displacement),
-				Vector3.one * self.Size,
+				self.Rotation + self.LastPosition,
+				self.SizeVector,
 				Displacement,
 				self.RaycastParams
 			)
 
-			if Result and Result.Instance then
-				Net.hit.fire({
-					Id = Id,
-					Time = Now,
-					Normal = Result.Normal,
-					Object = Result.Instance,
-					Position = Result.Position,
-				})
+			if Result then
+				Hit = Result.Instance
+
+				if Hit and Hit ~= self.LastHit and Trajectory.IsFinite(Result.Position) then
+					Net.hit.fire({
+						Id = Id,
+						Time = Now,
+						Normal = Trajectory.ImpactNormal(Result.Normal, Displacement),
+						Object = Hit,
+						Position = Result.Position,
+					})
+				end
 			end
 		end
 
+		self.LastHit = Hit
 		self.LastPosition = Position
 	end
 end
@@ -210,6 +250,8 @@ Net.update.on(function(Data: ProjectileData)
 	_Projectile.Origin = Data.Origin
 	_Projectile.Direction = Data.Direction
 	_Projectile.Distance = Data.Distance
+	_Projectile.Rotation = Trajectory.Rotation(Data.Direction)
+	_Projectile.LastHit = nil
 
 	local After = Trajectory.PositionAt(_Projectile, Now)
 

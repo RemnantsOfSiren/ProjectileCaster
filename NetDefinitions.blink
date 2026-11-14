@@ -3,12 +3,6 @@ option ClientOutput = "src/Net/client.luau"
 option ServerOutput = "src/Net/server.luau"
 option RemoteScope = "Cardinal"
 
--- Projectiles replicate as trajectory *segments*, not per-frame positions.
--- A segment is (Origin, Direction, Speed, Time); both peers evaluate
--- Origin + Direction * Speed * (Clock - Time) against workspace:GetServerTimeNow().
--- Nothing is sent until the trajectory actually changes, so these events are rare
--- and every one of them is load-bearing -- hence Reliable.
-
 struct Projectile {
     Id: u32,
     Seq: u8,
